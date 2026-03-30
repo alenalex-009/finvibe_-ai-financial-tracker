@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-primary: #FF3D00;
+  --color-brand-secondary: #00E676;
+  --color-brand-accent: #2979FF;
+  --color-brand-dark: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans;
+  }
+}
+
+.glass {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.card-gradient {
+  background: linear-gradient(135deg, var(--color-brand-primary) 0%, #FF9100 100%);
+}
+
+.card-gradient-alt {
+  background: linear-gradient(135deg, var(--color-brand-secondary) 0%, #00C853 100%);
+}
