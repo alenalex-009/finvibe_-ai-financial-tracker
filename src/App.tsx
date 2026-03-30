@@ -9,30 +9,44 @@ export default function App() {
   const [category, setCategory] = useState('');
   const [type, setType] = useState('expense');
 
-  const BACKEND = "https://your-backend.onrender.com"; // 🔥 CHANGE THIS
+  // 🔥 👉 PUT YOUR REAL RENDER BACKEND URL HERE
+  const BACKEND = "https://finvibe-ai-financial-tracker.onrender.com";
 
-  // 🔥 Auto load data (NO AUTH)
+  // Load data
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const tRes = await fetch(`${BACKEND}/api/transactions`);
-      const bRes = await fetch(`${BACKEND}/api/budget`);
+      const [tRes, bRes] = await Promise.all([
+        fetch(`${BACKEND}/api/transactions`),
+        fetch(`${BACKEND}/api/budget`)
+      ]);
 
-      if (tRes.ok) setTransactions(await tRes.json());
-      if (bRes.ok) {
-        const data = await bRes.json();
-        setBudget(data.amount);
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        setTransactions(tData);
       }
+
+      if (bRes.ok) {
+        const bData = await bRes.json();
+        setBudget(bData.amount);
+      }
+
     } catch (e) {
-      console.error("Fetch error", e);
+      console.error("Fetch error:", e);
+      alert("Backend not responding ❌");
     }
   };
 
   const addTransaction = async (e) => {
     e.preventDefault();
+
+    if (!amount || !description || !category) {
+      alert("Fill all fields");
+      return;
+    }
 
     const data = {
       amount: parseFloat(amount),
@@ -53,34 +67,47 @@ export default function App() {
 
       if (res.ok) {
         const newT = await res.json();
-        setTransactions([newT, ...transactions]);
+        setTransactions(prev => [newT, ...prev]);
+
         setAmount('');
         setDescription('');
         setCategory('');
+      } else {
+        alert("Failed to add transaction");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Add error:", e);
     }
   };
 
   const deleteTransaction = async (id) => {
-    await fetch(`${BACKEND}/api/transactions/${id}`, {
-      method: "DELETE"
-    });
+    try {
+      const res = await fetch(`${BACKEND}/api/transactions/${id}`, {
+        method: "DELETE"
+      });
 
-    setTransactions(transactions.filter(t => t.id !== id));
+      if (res.ok) {
+        setTransactions(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (e) {
+      console.error("Delete error:", e);
+    }
   };
 
   const updateBudget = async (val) => {
     setBudget(val);
 
-    await fetch(`${BACKEND}/api/budget`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ amount: val })
-    });
+    try {
+      await fetch(`${BACKEND}/api/budget`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ amount: val })
+      });
+    } catch (e) {
+      console.error("Budget update error:", e);
+    }
   };
 
   return (
@@ -130,21 +157,25 @@ export default function App() {
       {/* Transactions */}
       <h2 style={{ marginTop: 20 }}>Transactions</h2>
 
-      {transactions.map((t) => (
-        <div key={t.id} style={{
-          border: "1px solid #ccc",
-          padding: 10,
-          margin: 5
-        }}>
-          <b>{t.description}</b> - ₹{t.amount}
-          <button
-            onClick={() => deleteTransaction(t.id)}
-            style={{ marginLeft: 10 }}
-          >
-            Delete
-          </button>
-        </div>
-      ))}
+      {transactions.length === 0 ? (
+        <p>No transactions yet</p>
+      ) : (
+        transactions.map((t) => (
+          <div key={t.id} style={{
+            border: "1px solid #ccc",
+            padding: 10,
+            margin: 5
+          }}>
+            <b>{t.description}</b> - ₹{t.amount} ({t.category})
+            <button
+              onClick={() => deleteTransaction(t.id)}
+              style={{ marginLeft: 10 }}
+            >
+              Delete
+            </button>
+          </div>
+        ))
+      )}
     </div>
   );
 }
